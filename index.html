@@ -128,6 +128,7 @@ fit</code></pre>
 ## C    0   14 2721    3    0 0.006208912
 ## D    0    2   13 2556    2 0.006607073
 ## E    0    1    0    7 2878 0.002772003</code></pre>
+<p>From above analysis it seems to have good accuracy and low in-sample error rate, but there is fair chance that model might have been over-fitted to training set so it is very much essential to verify this on cross validation set to measure out of sample rate before we try on test set.</p>
 </div>
 <div id="cross-validation" class="section level2">
 <h2>Cross-Validation</h2>
@@ -165,7 +166,7 @@ confusionMatrix(pValidation,validation$classe)</code></pre>
 ## Detection Prevalence   0.2847   0.1942   0.1736   0.1637   0.1838
 ## Balanced Accuracy      0.9998   0.9979   0.9960   0.9992   1.0000</code></pre>
 <p>Accuracy obtained was 99% with good calculated concordance (kappa = 0.99)</p>
-<p>From confusion matrix it is very clear that our model is having good accuracy and not overfitted to training set. With this accuracy we can run this on testing set for predicting classe.</p>
+<p>From confusion matrix it is very clear that our model is having good accuracy and not over-fitted to training set. With this accuracy we can run this on testing set for predicting classe.</p>
 </div>
 <div id="predictions" class="section level2">
 <h2>Predictions</h2>

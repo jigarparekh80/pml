@@ -64,6 +64,8 @@ fit <- randomForest(classe ~ ., data=training,ntree = 50)
 fit
 ```
 
+From above analysis it seems to have good accuracy and low in-sample error rate, but there is fair chance that model might have been over-fitted to training set so it is very much essential to verify this on cross validation set to measure out of sample rate before we try on test set. 
+
 ## Cross-Validation 
 ```{r}
 pValidation <- predict(fit,newdata = validation)
@@ -72,7 +74,7 @@ confusionMatrix(pValidation,validation$classe)
 
 Accuracy obtained was 99% with good calculated concordance (kappa = 0.99)
 
-From confusion matrix it is very clear that our model is having good accuracy and not overfitted to training set. With this accuracy we can run this on testing set for predicting classe.
+From confusion matrix it is very clear that our model is having good accuracy and not over-fitted to training set. With this accuracy we can run this on testing set for predicting classe.
 
 ## Predictions 
 ```{r}
