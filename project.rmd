@@ -1,7 +1,0 @@
----
-title: "Practical Machine Learning Project"
-author: "Jigar Parekh"
-date: "Sunday, February 15, 2015"
-output: html_document
----
-
