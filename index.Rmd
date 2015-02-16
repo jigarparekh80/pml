@@ -4,3 +4,92 @@ author: "Jigar Parekh"
 date: "Sunday, February 16, 2015"
 output: html_document
 ---
+
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively.
+
+The goal of this project is to predict the manner in which they did the exercise. This is the "classe" variable in the training set.
+
+## Loading Data
+
+```{r cache=TRUE}
+pml_training <- read.table(file = "./pml-training.csv",sep = ",",header = TRUE)
+pml_testing <- read.table(file = "./pml-testing.csv",sep = ",",header = TRUE)
+
+```
+
+##Data Analysis 
+```{r results='hide'}
+str(pml_training)
+```
+```{r results='hide'}
+str(pml_testing)
+```
+
+## Pre-Processing 
+After looking data it seems that lot of variable in training and test set are having value as NA. Features with NA or near zero value will not help much in prediction in training & testing set. In order to remove those features first find out all near zero features from test set and remove them from both set. 
+
+I have also removed few other features like X,user_name,timestamp.
+
+```{r}
+library(caret)
+
+nAColumns <- nearZeroVar(pml_testing)
+
+nAColumns <- c(1,2,3,4,5,6,nAColumns)
+
+pml_training2 <- subset(pml_training,select = -nAColumns)
+pml_testing2 <- subset(pml_testing,select = -nAColumns)
+
+```
+
+
+## Data Spliting  
+Next step is to partition the training data into a training set and a validation set. I decided to use 80% of the data for training and 20% for validation.
+
+```{r}
+set.seed(1234)
+inTrain <- createDataPartition(y=pml_training2$classe,p=0.8,list = FALSE)
+training <- pml_training2[inTrain,]
+validation <- pml_training2[-inTrain,]
+```
+
+## Model Training 
+
+During adhoc analysis & model tuning i have tried with couple of option like decision tree & lda, but in order to have accuracy *random forest* is one of best option to go with. By default randomForest builds 500 trees which may take long time to train model so started with small no. of tree like 20,30.. and endup with 50 trees for accuracy. 
+
+```{r}
+library(randomForest)
+
+fit <- randomForest(classe ~ ., data=training,ntree = 50)
+fit
+```
+
+## Cross-Validation 
+```{r}
+pValidation <- predict(fit,newdata = validation)
+confusionMatrix(pValidation,validation$classe)
+```
+
+Accuracy obtained was 99% with good calculated concordance (kappa = 0.99)
+
+From confusion matrix it is very clear that our model is having good accuracy and not overfitted to training set. With this accuracy we can run this on testing set for predicting classe.
+
+## Predictions 
+```{r}
+answers <- predict(fit,newdata=pml_testing2)
+answers
+```
+
+## Submission 
+```{r}
+
+pml_write_files = function(x){
+  n = length(x)
+  for(i in 1:n){
+    filename = paste0("problem_id_",i,".txt")
+    write.table(x[i],file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE)
+  }
+}
+
+pml_write_files(answers)
+```

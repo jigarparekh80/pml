@@ -67,7 +67,126 @@ img {
 </div>
 
 
+<p>Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively.</p>
+<p>The goal of this project is to predict the manner in which they did the exercise. This is the “classe” variable in the training set.</p>
+<div id="loading-data" class="section level2">
+<h2>Loading Data</h2>
+<pre class="r"><code>pml_training &lt;- read.table(file = &quot;./pml-training.csv&quot;,sep = &quot;,&quot;,header = TRUE)
+pml_testing &lt;- read.table(file = &quot;./pml-testing.csv&quot;,sep = &quot;,&quot;,header = TRUE)</code></pre>
+</div>
+<div id="data-analysis" class="section level2">
+<h2>Data Analysis</h2>
+<pre class="r"><code>str(pml_training)</code></pre>
+<pre class="r"><code>str(pml_testing)</code></pre>
+</div>
+<div id="pre-processing" class="section level2">
+<h2>Pre-Processing</h2>
+<p>After looking data it seems that lot of variable in training and test set are having value as NA. Features with NA or near zero value will not help much in prediction in training &amp; testing set. In order to remove those features first find out all near zero features from test set and remove them from both set.</p>
+<p>I have also removed few other features like X,user_name,timestamp.</p>
+<pre class="r"><code>library(caret)</code></pre>
+<pre><code>## Warning: package 'caret' was built under R version 3.1.2</code></pre>
+<pre><code>## Loading required package: lattice</code></pre>
+<pre><code>## Warning: package 'lattice' was built under R version 3.1.2</code></pre>
+<pre><code>## Loading required package: ggplot2</code></pre>
+<pre><code>## Warning: package 'ggplot2' was built under R version 3.1.2</code></pre>
+<pre class="r"><code>nAColumns &lt;- nearZeroVar(pml_testing)
 
+nAColumns &lt;- c(1,2,3,4,5,6,nAColumns)
+
+pml_training2 &lt;- subset(pml_training,select = -nAColumns)
+pml_testing2 &lt;- subset(pml_testing,select = -nAColumns)</code></pre>
+</div>
+<div id="data-spliting" class="section level2">
+<h2>Data Spliting</h2>
+<p>Next step is to partition the training data into a training set and a validation set. I decided to use 80% of the data for training and 20% for validation.</p>
+<pre class="r"><code>set.seed(1234)
+inTrain &lt;- createDataPartition(y=pml_training2$classe,p=0.8,list = FALSE)
+training &lt;- pml_training2[inTrain,]
+validation &lt;- pml_training2[-inTrain,]</code></pre>
+</div>
+<div id="model-training" class="section level2">
+<h2>Model Training</h2>
+<p>During adhoc analysis &amp; model tuning i have tried with couple of option like decision tree &amp; lda, but in order to have accuracy <em>random forest</em> is one of best option to go with. By default randomForest builds 500 trees which may take long time to train model so started with small no. of tree like 20,30.. and endup with 50 trees for accuracy.</p>
+<pre class="r"><code>library(randomForest)</code></pre>
+<pre><code>## Warning: package 'randomForest' was built under R version 3.1.2</code></pre>
+<pre><code>## randomForest 4.6-10
+## Type rfNews() to see new features/changes/bug fixes.</code></pre>
+<pre class="r"><code>fit &lt;- randomForest(classe ~ ., data=training,ntree = 50)
+fit</code></pre>
+<pre><code>## 
+## Call:
+##  randomForest(formula = classe ~ ., data = training, ntree = 50) 
+##                Type of random forest: classification
+##                      Number of trees: 50
+## No. of variables tried at each split: 7
+## 
+##         OOB estimate of  error rate: 0.34%
+## Confusion matrix:
+##      A    B    C    D    E class.error
+## A 4459    4    1    0    0 0.001120072
+## B    5 3031    2    0    0 0.002304147
+## C    0   14 2721    3    0 0.006208912
+## D    0    2   13 2556    2 0.006607073
+## E    0    1    0    7 2878 0.002772003</code></pre>
+</div>
+<div id="cross-validation" class="section level2">
+<h2>Cross-Validation</h2>
+<pre class="r"><code>pValidation &lt;- predict(fit,newdata = validation)
+confusionMatrix(pValidation,validation$classe)</code></pre>
+<pre><code>## Confusion Matrix and Statistics
+## 
+##           Reference
+## Prediction    A    B    C    D    E
+##          A 1116    1    0    0    0
+##          B    0  757    5    0    0
+##          C    0    1  679    1    0
+##          D    0    0    0  642    0
+##          E    0    0    0    0  721
+## 
+## Overall Statistics
+##                                          
+##                Accuracy : 0.998          
+##                  95% CI : (0.996, 0.9991)
+##     No Information Rate : 0.2845         
+##     P-Value [Acc &gt; NIR] : &lt; 2.2e-16      
+##                                          
+##                   Kappa : 0.9974         
+##  Mcnemar's Test P-Value : NA             
+## 
+## Statistics by Class:
+## 
+##                      Class: A Class: B Class: C Class: D Class: E
+## Sensitivity            1.0000   0.9974   0.9927   0.9984   1.0000
+## Specificity            0.9996   0.9984   0.9994   1.0000   1.0000
+## Pos Pred Value         0.9991   0.9934   0.9971   1.0000   1.0000
+## Neg Pred Value         1.0000   0.9994   0.9985   0.9997   1.0000
+## Prevalence             0.2845   0.1935   0.1744   0.1639   0.1838
+## Detection Rate         0.2845   0.1930   0.1731   0.1637   0.1838
+## Detection Prevalence   0.2847   0.1942   0.1736   0.1637   0.1838
+## Balanced Accuracy      0.9998   0.9979   0.9960   0.9992   1.0000</code></pre>
+<p>Accuracy obtained was 99% with good calculated concordance (kappa = 0.99)</p>
+<p>From confusion matrix it is very clear that our model is having good accuracy and not overfitted to training set. With this accuracy we can run this on testing set for predicting classe.</p>
+</div>
+<div id="predictions" class="section level2">
+<h2>Predictions</h2>
+<pre class="r"><code>answers &lt;- predict(fit,newdata=pml_testing2)
+answers</code></pre>
+<pre><code>##  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 
+##  B  A  B  A  A  E  D  B  A  A  B  C  B  A  E  E  A  B  B  B 
+## Levels: A B C D E</code></pre>
+</div>
+<div id="submission" class="section level2">
+<h2>Submission</h2>
+<pre class="r"><code>pml_write_files = function(x){
+  n = length(x)
+  for(i in 1:n){
+    filename = paste0(&quot;problem_id_&quot;,i,&quot;.txt&quot;)
+    write.table(x[i],file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE)
+  }
+}
+
+pml_write_files(answers)</code></pre>
+</div>
 
 
 </div>
